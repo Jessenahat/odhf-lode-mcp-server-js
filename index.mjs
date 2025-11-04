@@ -215,17 +215,35 @@ function sseWrite(res, event, dataObj) {
 
 // One-shot: send list_tools then close (best for ChatGPT connector)
 app.get("/sse_once", async (_req, res) => {
-  try {
-    sseHeaders(res);
-    // respond immediately; no need to load CSV for tool discovery
-    const payload = { event: "list_tools", data: { tools: TOOLS_MANIFEST } };
-    sseWrite(res, "message", payload);
-    // small delay to flush across proxies, then end
-    setTimeout(() => res.end(), 50);
-  } catch (e) {
-    res.status(500).end();
+  // ---- headers that disable proxy buffering and compression
+  res.status(200);
+  res.set({
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Cache-Control": "no-cache, no-store, must-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no",
+    "Access-Control-Allow-Origin": "*",
+    // make sure no compression/buffering is applied
+    "Content-Encoding": "identity",
+    "Transfer-Encoding": "chunked"
+  });
+
+  // If the platform supports it (Node 18+), flush headers now.
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
   }
+
+  // send the single required event
+  const payload = { event: "list_tools", data: { tools: TOOLS_MANIFEST } };
+  res.write("event: message\n");
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+
+  // end immediately – connector only needs discovery
+  res.end();
 });
+
 
 // Debug SSE with keepalive pings
 app.get("/sse", async (req, res) => {
