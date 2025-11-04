@@ -1,0 +1,15 @@
+{
+  "name": "odhf-lode-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server (HTTP + SSE) for Statistics Canada LODE dataset (ODHF).",
+  "type": "module",
+  "scripts": {
+    "start": "node index.mjs",
+    "dev": "node --watch index.mjs"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parse": "^5.5.6",
+    "express": "^4.19.2"
+  }
+}
